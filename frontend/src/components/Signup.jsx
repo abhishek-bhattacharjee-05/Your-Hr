@@ -88,11 +88,11 @@ const Signup = () => {
       form.append('resume', resume);
 
       try {
-        const existingUser = await axios.get(`http://localhost:5000/api/users/check/${email}`);
+        const existingUser = await axios.get(`https://your-hr-6p7e.onrender.com/api/users/check/${email}`);
         if (existingUser.data.exists) {
           toast.info('You have already submitted your information.');
         } else {
-          await axios.post('http://localhost:5000/api/users/register', form);
+          await axios.post('https://your-hr-6p7e.onrender.com/api/users/register', form);
           toast.success('Registration successful!');
           navigate('/thank-you');
         }
