@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { TextField, Button, Container, Typography, Box, Stack, Alert } from '@mui/material';
-import { toast } from 'react-toastify';
-
+import {
+  TextField,
+  Button,
+  Container,
+  Typography,
+  Box,
+  Stack,
+  Alert,
+} from '@mui/material';
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -15,7 +21,9 @@ const Signup = () => {
   });
 
   const [errors, setErrors] = useState({});
-  const [pdfPreview, setPdfPreview] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+
   const navigate = useNavigate();
 
   const validate = () => {
@@ -39,45 +47,21 @@ const Signup = () => {
   };
 
   const handleChange = (e) => {
-    const file = e.target.files ? e.target.files[0] : e.target.value;
     setFormData({
       ...formData,
-      [e.target.name]: file,
+      [e.target.name]: e.target.files ? e.target.files[0] : e.target.value,
     });
     setErrors({
       ...errors,
       [e.target.name]: "",
     });
-
-    if (e.target.name === 'resume' && file) {
-      generatePdfPreview(file);
-    }
-  };
-
-  const generatePdfPreview = (file) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const typedArray = new Uint8Array(reader.result);
-      pdfjsLib.getDocument(typedArray).promise.then((pdf) => {
-        pdf.getPage(1).then((page) => {
-          const viewport = page.getViewport({ scale: 1 });
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;
-          
-          page.render({ canvasContext: context, viewport: viewport }).promise.then(() => {
-            const thumbnailUrl = canvas.toDataURL();
-            setPdfPreview(thumbnailUrl);
-          });
-        });
-      });
-    };
-    reader.readAsArrayBuffer(file);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSuccessMessage('');
+    setErrorMessage('');
+
     if (validate()) {
       const { firstName, lastName, email, password, resume } = formData;
       const form = new FormData();
@@ -88,19 +72,14 @@ const Signup = () => {
       form.append('resume', resume);
 
       try {
-        const existingUser = await axios.get(`https://your-hr-6p7e.onrender.com/api/users/check/${email}`);
-        if (existingUser.data.exists) {
-          toast.info('You have already submitted your information.');
-        } else {
-          await axios.post('https://your-hr-6p7e.onrender.com/api/users/register', form);
-          toast.success('Registration successful!');
-          navigate('/thank-you');
-        }
+        await axios.post('http://localhost:5000/api/users/register', form);
+        setSuccessMessage('Registration successful!');
+        navigate('/thank-you');
       } catch (error) {
-        toast.error('Something went wrong. Please try again.');
+        setErrorMessage('Something went wrong. Please try again.');
       }
     } else {
-      toast.error('Please fix the errors above.');
+      setErrorMessage('Please fix the errors above.');
     }
   };
 
@@ -110,6 +89,8 @@ const Signup = () => {
         <Typography variant="h4" component="h1" gutterBottom>
           Sign Up
         </Typography>
+        {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
+        {successMessage && <Alert severity="success">{successMessage}</Alert>}
         <form onSubmit={handleSubmit}>
           <Stack spacing={2}>
             <Box sx={{ display: 'flex', gap: 2 }}>
@@ -165,23 +146,12 @@ const Signup = () => {
               <input
                 type="file"
                 name="resume"
-                accept="application/pdf"
                 onChange={handleChange}
                 hidden
                 required
               />
             </Button>
             {errors.resume && <Typography color="error">{errors.resume}</Typography>}
-            {pdfPreview && (
-              <Box mt={2}>
-                <Typography variant="subtitle1">Resume Preview:</Typography>
-                <img
-                  src={pdfPreview}
-                  alt="PDF Thumbnail"
-                  style={{ width: '100%', maxHeight: '200px', objectFit: 'contain' }}
-                />
-              </Box>
-            )}
             <Button
               type="submit"
               variant="contained"
