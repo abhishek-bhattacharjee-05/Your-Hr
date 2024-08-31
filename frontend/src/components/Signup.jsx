@@ -72,7 +72,7 @@ const Signup = () => {
       form.append('resume', resume);
 
       try {
-        await axios.post('http://localhost:5000/api/users/register', form);
+        await axios.post('https://your-hr-6p7e.onrender.com/api/users/register', form);
         setSuccessMessage('Registration successful!');
         navigate('/thank-you');
       } catch (error) {
